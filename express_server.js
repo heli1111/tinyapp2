@@ -68,9 +68,9 @@ app.get('/u/:id', (req, res) => {
 // redirect to newly added url page - /urls/:id
 app.post('/urls', (req, res) => {
   //generate and assign randomID to newly entered URL
-  let newShortURL = generateRandomString(6);
-  urlDatabase[newShortURL] = req.body['longURL'];
-  res.redirect(`/urls/${newShortURL}`);
+  let ShortURL = generateRandomString(6);
+  urlDatabase[ShortURL] = req.body['longURL'];
+  res.redirect(`/urls/${ShortURL}`);
 })
 
 // POST /urls/:id
@@ -80,9 +80,14 @@ app.post('/urls/:id', (req, res) => {
 })
 
 // POST /urls/:id/delete
+// delete specifi url from urlDatabase
 // redirect to /urls
 app.post('/urls/:id/delete', (req, res) => {
-
+  let shortURL = req.params.id;
+  // delete the url from urlDatabase
+  delete urlDatabase[shortURL];
+  // redirect to index with updated database
+  res.redirect('/urls');
 })
 
 // GET /login
