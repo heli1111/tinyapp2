@@ -8,18 +8,24 @@
   <%- include partials/_header %>
   
   <!--display the entire URL database, link the shortURLs to redirect to its longURL-->
-  
+  <ul>
   <% for (let shortURL in urls){ %>
-    <div>
-      <a href='/u/<%= shortURL %>/'><%= shortURL %></a> <%= `:  ${urls[shortURL]} ` %>
-    
-  <!--delete specific URL from urlDatabase-->
+    <li style="display:inline;">
+      <a href='/u/<%= shortURL %>/'><%= shortURL %></a> <%= ` -->  ${urls[shortURL]} ` %>
+      
+      <!-- edit url -->
+      <form method="GET" action="/urls/<%= shortURL %>">
+        <input type="submit" value="Edit">
+      </form>
 
+      <!--delete specific URL from urlDatabase-->
       <form method="POST" action="/urls/<%= shortURL %>/delete">
         <input type="submit" value="Delete">
       </form>
-    </div>
+    
+    </li>
   <% } %>
+</ul>
 
 </body>
 </html>

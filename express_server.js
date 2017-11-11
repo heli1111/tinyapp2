@@ -74,9 +74,12 @@ app.post('/urls', (req, res) => {
 })
 
 // POST /urls/:id
+// update a URL to the urlDatabase
 // redirect to /urls
 app.post('/urls/:id', (req, res) => {
-
+  let shortURL = req.params.id;
+  urlDatabase[shortURL] = req.body['longURL'];
+  res.redirect("/urls");
 })
 
 // POST /urls/:id/delete
