@@ -11,8 +11,13 @@ const PORT = process.env.PORT || 8080;
 app.set("view engine", "ejs");
 
 const urlDatabase = {  
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    url: "http://www.lighthouselabs.ca",
+    userID: 'defaultUser'},
+  "9sm5xK": {
+    url: "http://www.google.com",
+    userID: 'defaultUser'
+  }
 };
 
 
@@ -159,7 +164,7 @@ app.get('/urls/new', (req, res) => {
 // renders urls_show - display requested shortURL and its longURL, link shortURL to longURL
 app.get('/urls/:id', (req, res) => {
   let shortURL = req.params.id;
-  let longURL = urlDatabase[shortURL];
+  let longURL = urlDatabase[shortURL].url;
   let templateVars = {shortURL: shortURL, longURL: longURL, user: req.cookies["user"]};
   res.render("urls_show", templateVars);
 })
@@ -168,18 +173,28 @@ app.get('/urls/:id', (req, res) => {
 // redirect to longURL - handle shortURL request
 // render HTML
 app.get('/u/:id', (req, res) => {
-  let longURL = urlDatabase[req.params.id];
+  let longURL = urlDatabase[req.params.id].url;
   res.redirect(longURL);
 
 })
 
-// POST /urlss
+// POST /urls
 // Add new URL key-value pair to the urlDatabse
 // redirect to newly added url page - /urls/:id
 app.post('/urls', (req, res) => {
-  //generate and assign randomID to newly entered URL
+  // check user login status
+  let user = req.cookies['user'];
+  if (user === undefined){
+    res.redirect("/login");
+    return;
+  }  
+  // generate and assign randomID to newly entered URL
+  // append unique userID to the url object
   let ShortURL = generateRandomString(6);
-  urlDatabase[ShortURL] = req.body['longURL'];
+  urlDatabase[ShortURL] = {
+    url: req.body['longURL'],
+    userID: user
+  }
   res.redirect("/urls");
 })
 
