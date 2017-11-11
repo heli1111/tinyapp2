@@ -15,6 +15,16 @@ const urlDatabase = {
 const users = {};
 
 
+// generateRandomString - randomly generates a n digits alphanumerical string
+function generateRandomString(num) {
+  let randomID = "";
+  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (let i = 0; i < num; i++){
+    randomID += characters.charAt(Math.floor(Math.random()*characters.length));
+  }
+  return randomID;
+}
+
 // get /
 // redirects
 // it always redirect
@@ -54,11 +64,13 @@ app.get('/u/:id', (req, res) => {
 })
 
 // POST /urls
-// redirect to /urls/:id
+// Add new URL key-value pair to the urlDatabse
+// redirect to newly added url page - /urls/:id
 app.post('/urls', (req, res) => {
-
-  //display updated urlDatabase
-  console.log(req.body);
+  //generate and assign randomID to newly entered URL
+  let newShortURL = generateRandomString(6);
+  urlDatabase[newShortURL] = req.body['longURL'];
+  res.redirect(`/urls/${newShortURL}`);
 })
 
 // POST /urls/:id
