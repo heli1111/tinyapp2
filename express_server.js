@@ -34,6 +34,18 @@ const users = {
   }
 }
 
+// function that returns the specific url list for user
+
+function userUrl(userID){
+  let urls = {};
+  for (let url in urlDatabase){
+    if (urlDatabase[url].userID === userID){
+      urls[url] = urlDatabase[url];
+    }
+  }
+  return urls;
+}
+
 // generateRandomString - randomly generates a n digits alphanumerical string
 function generateRandomString(num) {
   let randomID = "";
@@ -86,7 +98,7 @@ app.post('/login', (req, res) => {
   Object.keys(users).forEach(function(user){
     if (email === users[user].email){
       if (password === users[user].password){
-      res.cookie('user', user);
+      res.cookie('user', users[user]);
       res.redirect("/urls");
       } else {
       res.status(403).send("password don't match!");
@@ -141,7 +153,17 @@ app.post('/logout', (req, res) => {
 // GET /urls
 // renders urls_index.ejs - display URL database, link shortURL to its longURL
 app.get('/urls', (req, res) => {
-  let templateVars = {urls: urlDatabase, user: req.cookies["user"]};
+  let user = req.cookies['user'];
+  let urls = {};
+
+  // create user specified url list
+  if (user === undefined){
+    res.redirect("/login");
+    return;
+  } else {
+    urls = userUrl(user.id);
+  }
+  let templateVars = {urls: urls, user: user};
   res.render("urls_index", templateVars);
 })
 
@@ -162,10 +184,18 @@ app.get('/urls/new', (req, res) => {
 
 // GET /urls/:id 
 // renders urls_show - display requested shortURL and its longURL, link shortURL to longURL
+// prevent unauthorized users to view sortened URL
 app.get('/urls/:id', (req, res) => {
+  let user = req.cookies["user"];
   let shortURL = req.params.id;
   let longURL = urlDatabase[shortURL].url;
-  let templateVars = {shortURL: shortURL, longURL: longURL, user: req.cookies["user"]};
+  let templateVars = {shortURL: shortURL, longURL: longURL, user: user};
+ 
+  // set viewing limitations to unauthorized users
+  if (user && urlDatabase[shortURL].userID !== user.id){
+    res.status(403).send("unauthorized");
+    return;
+  }
   res.render("urls_show", templateVars);
 })
 
@@ -193,17 +223,23 @@ app.post('/urls', (req, res) => {
   let ShortURL = generateRandomString(6);
   urlDatabase[ShortURL] = {
     url: req.body['longURL'],
-    userID: user
+    userID: user.id
   }
   res.redirect("/urls");
 })
 
 // POST /urls/:id
-// update a URL to the urlDatabase
+// update a URL to the urlDatabase, only authorized user can see thier own list
 // redirect to /urls
 app.post('/urls/:id', (req, res) => {
   let shortURL = req.params.id;
-  urlDatabase[shortURL] = req.body['longURL'];
+  let user = req.cookie['user'];
+
+  if (urlDatabase[shortURL].userID !== user.id){
+    res.status(403).send("unauthorized");
+    return;
+  }
+  urlDatabase[shortURL].url = req.body['longURL'];
   res.redirect("/urls");
 })
 
@@ -211,7 +247,13 @@ app.post('/urls/:id', (req, res) => {
 // delete specifi url from urlDatabase
 // redirect to /urls
 app.post('/urls/:id/delete', (req, res) => {
+  let user = req.cookie['user'];
   let shortURL = req.params.id;
+
+  if (urlDatabase[shortURL].userID !== user.id){
+    res.status(403).send("unauthorized");
+    return;
+  }
   // delete the url from urlDatabase
   delete urlDatabase[shortURL];
   // redirect to index with updated database
