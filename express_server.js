@@ -2,7 +2,10 @@ const express = require('express');
 const app = express();
 const http = require('http');
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 
 const PORT = process.env.PORT || 8080;
 app.set("view engine", "ejs");
@@ -32,17 +35,56 @@ app.get('/', (req, res) => {
   res.redirect("/urls");
 })
 
+// GET /login
+// render HTML 
+app.get('/login', (req, res) => {
+  res.render("login");
+})
+
+// GET /register
+// render HTML /register
+app.get('/register', (req, res) => {
+  res.render("register");
+
+})
+
+// POST /login
+// obtain username to login, ser username as cookie
+// redirect to /urls
+app.post('/login', (req, res) => {
+  let username = req.body['username'];
+  // set cookie
+  res.cookie('username', username);
+  res.redirect("/urls");
+})
+
+// POST /register
+// redirect to /urls
+app.post('/register', (req, res) => {
+
+})
+
+// POST /logout
+// clear login cookie
+// redirect to /urls
+app.post('/logout', (req, res) => {
+  res.clearCookie('username');
+  res.redirect("/urls");
+
+})
+
 // GET /urls
 // renders urls_index.ejs - display URL database, link shortURL to its longURL
 app.get('/urls', (req, res) => {
-  let templateVars = {urls: urlDatabase};
+  let templateVars = {urls: urlDatabase, username: req.cookies["username"]};
   res.render("urls_index", templateVars);
 })
 
 // GET /urls/new
 // renders urls_new - adding new url
 app.get('/urls/new', (req, res) => {
-  res.render("urls_new");
+  let templateVars = {username: req.cookies["username"]}
+  res.render("urls_new", templateVars);
 })
 
 // GET /urls/:id 
@@ -50,7 +92,7 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:id', (req, res) => {
   let shortURL = req.params.id;
   let longURL = urlDatabase[shortURL];
-  let templateVars = {shortURL: shortURL, longURL: longURL};
+  let templateVars = {shortURL: shortURL, longURL: longURL, username: req.cookies["username"]};
   res.render("urls_show", templateVars);
 })
 
@@ -93,36 +135,6 @@ app.post('/urls/:id/delete', (req, res) => {
   res.redirect('/urls');
 })
 
-// GET /login
-// render HTML 
-app.get('/login', (req, res) => {
-  res.render("login");
-})
-
-// GET /register
-// render HTML /register
-app.get('/register', (req, res) => {
-  res.render("register");
-
-})
-
-// POST /login
-// redirect to /urls
-app.post('/login', (req, res) => {
-
-})
-
-// POST /register
-// redirect to /urls
-app.post('/register', (req, res) => {
-
-})
-
-// POST /logout
-// redirect to /urls
-app.post('/logout', (req, res) => {
-
-})
 
 // PORT
 app.listen(PORT, () => {console.log('TinyApp Listening on PORT 8080!')});
