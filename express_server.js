@@ -9,7 +9,7 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const userDatabse = {};
+const users = {};
 
 
 // get /
@@ -19,13 +19,11 @@ app.get('/', (req, res) => {
   res.redirect("/urls");
 })
 
-// get /urls
-// render HTML
-// urls_index.ejs - display URL data
+// GET /urls
+// renders urls_index.ejs - display URL database, link shortURL to its longURL
 app.get('/urls', (req, res) => {
   let templateVars = {urls: urlDatabase};
   res.render("urls_index", templateVars);
-
 })
 
 // GET /urls/new
@@ -37,18 +35,20 @@ app.get('/urls/new', (req, res) => {
 })
 
 // GET /urls/:id 
-// render urls_show - display specific shortened URLs
+// renders urls_show - display requested shortURL and its longURL, link shortURL to longURL
 app.get('/urls/:id', (req, res) => {
-  let templateVars = {shortURL: req.params.id};
+  let shortURL = req.params.id;
+  let longURL = urlDatabase[shortURL];
+  let templateVars = {shortURL: shortURL, longURL: longURL};
   res.render("urls_show", templateVars);
-
 })
 
 // GET /u/:id
 // redirect to longURL - handle shortURL request
 // render HTML
 app.get('/u/:id', (req, res) => {
-res.redirect(longURL);
+  let longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
 
 })
 

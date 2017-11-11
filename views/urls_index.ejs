@@ -7,6 +7,17 @@
 
   <%- include partials/_header %>
   
-  <!-- Add your EJS code here -->
+  <!--display the entire URL database, link the shortURLs to redirect to its longURL-->
+  <ul>
+  <% for (let shortURL in urls){ %>
+    <li>
+      <a href='/u/<%= shortURL %>/'><%= shortURL %></a> 
+        <%= `:  ${urls[shortURL]} ` %>
+    </li>
+  <% } %>
+  </ul>
+
+
+
 </body>
 </html>
