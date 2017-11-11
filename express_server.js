@@ -1,6 +1,9 @@
 const express = require('express');
 const app = express();
 const http = require('http');
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({extended: true}));
+
 const PORT = process.env.PORT || 8080;
 app.set("view engine", "ejs");
 
@@ -28,10 +31,8 @@ app.get('/urls', (req, res) => {
 
 // GET /urls/new
 // renders urls_new - adding new url
-// redirects
 app.get('/urls/new', (req, res) => {
   res.render("urls_new");
-
 })
 
 // GET /urls/:id 
@@ -56,7 +57,8 @@ app.get('/u/:id', (req, res) => {
 // redirect to /urls/:id
 app.post('/urls', (req, res) => {
 
-
+  //display updated urlDatabase
+  console.log(req.body);
 })
 
 // POST /urls/:id
