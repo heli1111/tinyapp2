@@ -4,8 +4,6 @@ const http = require('http');
 const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require('bcrypt');
-
-
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   secret: generateRandomString(10),
@@ -81,6 +79,7 @@ app.post('/login', (req, res) => {
   // error handling - verify inputs
   if (email === "" || password === ""){
     res.status(403).send("Please enter email and password");
+    return;
   }
 
   // error handling - verify password
@@ -89,13 +88,15 @@ app.post('/login', (req, res) => {
       if (bcrypt.compareSync(password, users[user].password)) {
         req.session.user_id = users[user];
         res.redirect("/urls");
+        return;
       } else {
         res.status(403).send("password don't match!");
+        return;
       }
     }
   }
 
-  res.status(403).send("email don't exist, please register!")
+  res.status(403).send("email don't exist, please register!");
 });
 
 // POST /register
