@@ -3,6 +3,8 @@ const app = express();
 const http = require('http');
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcrypt');
+
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
@@ -10,29 +12,11 @@ app.use(cookieParser());
 const PORT = process.env.PORT || 8080;
 app.set("view engine", "ejs");
 
-const urlDatabase = {  
-  "b2xVn2": {
-    url: "http://www.lighthouselabs.ca",
-    userID: 'defaultUser'},
-  "9sm5xK": {
-    url: "http://www.google.com",
-    userID: 'defaultUser'
-  }
-};
+// initialize url database
+const urlDatabase = {};
 
-
-const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
-  },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
-  }
-}
+// initialize user database
+const users = {};
 
 // function that returns the specific url list for user
 
@@ -95,16 +79,16 @@ app.post('/login', (req, res) => {
   }
 
   // error handling - verify password
-  Object.keys(users).forEach(function(user){
-    if (email === users[user].email){
-      if (password === users[user].password){
-      res.cookie('user', users[user]);
-      res.redirect("/urls");
+  for (let user in users) {
+    if (email === users[user].email) {
+      if (bcrypt.compareSync(password, users[user].password)) {
+        res.cookie('user', users[user]);
+        res.redirect("/urls");
       } else {
-      res.status(403).send("password don't match!");
+        res.status(403).send("password don't match!");
       }
     }
-  });
+  };
 
   res.status(403).send("email don't exist, please register!")
 });
@@ -118,27 +102,26 @@ app.post('/register', (req, res) => {
   // error handling
   if (email === "" || password === ""){
     res.status(400).send("please enter email and password");
+    return;
   }
 
-  Object.keys(users).forEach(function(user) {
+  for (let user in users){
     if (email === users[user].email){
     res.status(400).send("email already exists!");
+    return;
     }
-  })
+  }
 
   // generate random user ID
   let userID = generateRandomString(6);
-  users[userID] = {id: userID, email: email, password: password};
+  let hashedPassword = bcrypt.hashSync(password,10);
+  users[userID] = {id: userID, email: email, password: hashedPassword};
   // set cookie to user ID 
   res.cookie('user', users[userID]);
   // redirect to /urls
-
+  console.log(users);
   res.redirect("/urls");
 });
-
-
-
-
 
 
 // POST /logout
