@@ -141,11 +141,19 @@ app.get('/urls', (req, res) => {
 })
 
 // GET /urls/new
-// renders urls_new - adding new url
+// renders urls_new - only registered users can add new url
+// 
 app.get('/urls/new', (req, res) => {
-  let templateVars = {user: req.cookies["user"]}
+  let user = req.cookies['user'];
+  let templateVars = {user: user};
+  if (user === undefined){
+    res.redirect("/login");
+    return;
+  }
   res.render("urls_new", templateVars);
-})
+});
+
+
 
 // GET /urls/:id 
 // renders urls_show - display requested shortURL and its longURL, link shortURL to longURL
@@ -165,14 +173,14 @@ app.get('/u/:id', (req, res) => {
 
 })
 
-// POST /urls
+// POST /urlss
 // Add new URL key-value pair to the urlDatabse
 // redirect to newly added url page - /urls/:id
 app.post('/urls', (req, res) => {
   //generate and assign randomID to newly entered URL
   let ShortURL = generateRandomString(6);
   urlDatabase[ShortURL] = req.body['longURL'];
-  res.redirect(`/urls/${ShortURL}`);
+  res.redirect("/urls");
 })
 
 // POST /urls/:id

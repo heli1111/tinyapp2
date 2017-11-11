@@ -7,7 +7,15 @@
 
   <%- include partials/_header %>
   
-  <!--display the entire URL database, link the shortURLs to redirect to its longURL-->
+  <% if (user !== undefined) { %>
+
+  <!-- create new url --> 
+  <form method="GET" action="/urls/new">
+    <input type="submit" value="Add URL">
+  </form>
+  <% } %>
+
+  <!-- display all urls --> 
   <ul>
   <% for (let shortURL in urls){ %>
     <li style="display:inline;">
