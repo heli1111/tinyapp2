@@ -2,12 +2,17 @@ const express = require('express');
 const app = express();
 const http = require('http');
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require('bcrypt');
 
 
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+app.use(cookieSession({
+  secret: generateRandomString(10),
+  //cookie options - 24 hrs
+  maxAge: 24 * 60 * 60 * 1000
+}));
+
 
 const PORT = process.env.PORT || 8080;
 app.set("view engine", "ejs");
@@ -15,7 +20,7 @@ app.set("view engine", "ejs");
 // initialize url database
 const urlDatabase = {};
 
-// initialize user database
+// initialize user 
 const users = {};
 
 // function that returns the specific url list for user
@@ -51,7 +56,7 @@ app.get('/', (req, res) => {
 // render HTML 
 app.get('/login', (req, res) => {
   // set cookie to templateVars
-  let templateVars = {user: req.cookies["user"]};
+  let templateVars = {user: req.session.user_id};
   // renger login template
   res.render("login", templateVars);
 })
@@ -60,7 +65,7 @@ app.get('/login', (req, res) => {
 // render HTML /register
 app.get('/register', (req, res) => {
   // set cookie to templateVars
-  let templateVars = {user: req.cookies["user"]};
+  let templateVars = {user: req.session.user_id};
   // render register template
   res.render("register", templateVars);
 
@@ -82,13 +87,13 @@ app.post('/login', (req, res) => {
   for (let user in users) {
     if (email === users[user].email) {
       if (bcrypt.compareSync(password, users[user].password)) {
-        res.cookie('user', users[user]);
+        req.session.user_id = users[user];
         res.redirect("/urls");
       } else {
         res.status(403).send("password don't match!");
       }
     }
-  };
+  }
 
   res.status(403).send("email don't exist, please register!")
 });
@@ -111,15 +116,13 @@ app.post('/register', (req, res) => {
     return;
     }
   }
-
   // generate random user ID
   let userID = generateRandomString(6);
   let hashedPassword = bcrypt.hashSync(password,10);
   users[userID] = {id: userID, email: email, password: hashedPassword};
-  // set cookie to user ID 
-  res.cookie('user', users[userID]);
+  // set session cookie to user ID 
+  req.session.user_id = users[userID];
   // redirect to /urls
-  console.log(users);
   res.redirect("/urls");
 });
 
@@ -128,7 +131,7 @@ app.post('/register', (req, res) => {
 // clear login cookie
 // redirect to /urls
 app.post('/logout', (req, res) => {
-  res.clearCookie('user');
+  delete req.session['user_id'];
   res.redirect("/urls");
 
 })
@@ -136,7 +139,7 @@ app.post('/logout', (req, res) => {
 // GET /urls
 // renders urls_index.ejs - display URL database, link shortURL to its longURL
 app.get('/urls', (req, res) => {
-  let user = req.cookies['user'];
+  let user = req.session.user_id;
   let urls = {};
 
   // create user specified url list
@@ -154,7 +157,7 @@ app.get('/urls', (req, res) => {
 // renders urls_new - only registered users can add new url
 // 
 app.get('/urls/new', (req, res) => {
-  let user = req.cookies['user'];
+  let user = req.session.user_id;
   let templateVars = {user: user};
   if (user === undefined){
     res.redirect("/login");
@@ -169,7 +172,7 @@ app.get('/urls/new', (req, res) => {
 // renders urls_show - display requested shortURL and its longURL, link shortURL to longURL
 // prevent unauthorized users to view sortened URL
 app.get('/urls/:id', (req, res) => {
-  let user = req.cookies["user"];
+  let user = req.session.user_id;
   let shortURL = req.params.id;
   let longURL = urlDatabase[shortURL].url;
   let templateVars = {shortURL: shortURL, longURL: longURL, user: user};
@@ -196,7 +199,7 @@ app.get('/u/:id', (req, res) => {
 // redirect to newly added url page - /urls/:id
 app.post('/urls', (req, res) => {
   // check user login status
-  let user = req.cookies['user'];
+  let user = req.session.user_id;
   if (user === undefined){
     res.redirect("/login");
     return;
@@ -216,7 +219,7 @@ app.post('/urls', (req, res) => {
 // redirect to /urls
 app.post('/urls/:id', (req, res) => {
   let shortURL = req.params.id;
-  let user = req.cookie['user'];
+  let user = req.session.user_id;
 
   if (urlDatabase[shortURL].userID !== user.id){
     res.status(403).send("unauthorized");
@@ -230,7 +233,7 @@ app.post('/urls/:id', (req, res) => {
 // delete specifi url from urlDatabase
 // redirect to /urls
 app.post('/urls/:id/delete', (req, res) => {
-  let user = req.cookie['user'];
+  let user = req.session.user_id;
   let shortURL = req.params.id;
 
   if (urlDatabase[shortURL].userID !== user.id){
