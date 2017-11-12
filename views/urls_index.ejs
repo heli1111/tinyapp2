@@ -20,7 +20,11 @@
   <ul>
   <% for (let shortURL in urls){ %>
     <li style="display:inline;">
-      <a href='/u/<%= shortURL %>/'><%= shortURL %></a> <%= ` -->  ${urls[shortURL].url} ` %>
+      <a href='/u/<%= shortURL %>/'>
+        <%= shortURL %>
+      </a> 
+      <!-- stretch visit counter-->
+      <%= `(Total view count: ${urls[shortURL].count}) -->  ${urls[shortURL].url} ` %>
       
       <!-- edit url -->
       <form method="GET" action="/urls/<%= shortURL %>">

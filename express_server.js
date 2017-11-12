@@ -4,15 +4,14 @@ const http = require('http');
 const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require('bcrypt');
+const PORT = process.env.PORT || 8080;
+
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   secret: generateRandomString(10),
   //cookie options - 24 hrs
   maxAge: 24 * 60 * 60 * 1000
 }));
-
-
-const PORT = process.env.PORT || 8080;
 app.set("view engine", "ejs");
 
 // initialize url database
@@ -22,11 +21,10 @@ const urlDatabase = {};
 const users = {};
 
 // function that returns the specific url list for user
-
 function userUrl(userID){
   let urls = {};
-  for (let url in urlDatabase){
-    if (urlDatabase[url].userID === userID){
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === userID) {
       urls[url] = urlDatabase[url];
     }
   }
@@ -43,15 +41,12 @@ function generateRandomString(num) {
   return randomID;
 }
 
-// get /
-// redirects
-// it always redirect
+// main page
 app.get('/', (req, res) => {
   res.redirect("/urls");
 })
 
-// GET /login
-// render HTML 
+// login page
 app.get('/login', (req, res) => {
   // set cookie to templateVars
   let templateVars = {user: req.session.user_id};
@@ -59,8 +54,7 @@ app.get('/login', (req, res) => {
   res.render("login", templateVars);
 })
 
-// GET /register
-// render HTML /register
+// register page
 app.get('/register', (req, res) => {
   // set cookie to templateVars
   let templateVars = {user: req.session.user_id};
@@ -69,15 +63,13 @@ app.get('/register', (req, res) => {
 
 })
 
-// POST /login
-// obtain email & password to login, set user as cookie
-// redirect to /urls
+// obtain email & password to login, set user in session
 app.post('/login', (req, res) => {
   let email = req.body['email'];
   let password = req.body['password'];
 
   // error handling - verify inputs
-  if (email === "" || password === ""){
+  if (email === "" || password === "") {
     res.status(403).send("Please enter email and password");
     return;
   }
@@ -89,30 +81,28 @@ app.post('/login', (req, res) => {
         req.session.user_id = users[user];
         res.redirect("/urls");
         return;
-      } else {
-        res.status(403).send("password don't match!");
-        return;
       }
+      res.status(403).send("password don't match!");
+      return;
     }
   }
 
   res.status(403).send("email don't exist, please register!");
 });
 
-// POST /register
-// redirect to /urls
+// register new user
 app.post('/register', (req, res) => {
   let email = req.body['email'];
   let password = req.body['password'];
 
   // error handling
-  if (email === "" || password === ""){
+  if (email === "" || password === "") {
     res.status(400).send("please enter email and password");
     return;
   }
 
   for (let user in users){
-    if (email === users[user].email){
+    if (email === users[user].email) {
     res.status(400).send("email already exists!");
     return;
     }
@@ -123,28 +113,23 @@ app.post('/register', (req, res) => {
   users[userID] = {id: userID, email: email, password: hashedPassword};
   // set session cookie to user ID 
   req.session.user_id = users[userID];
-  // redirect to /urls
   res.redirect("/urls");
 });
 
-
-// POST /logout
-// clear login cookie
-// redirect to /urls
+// logout user
+// clear login session
 app.post('/logout', (req, res) => {
   delete req.session['user_id'];
   res.redirect("/urls");
-
 })
 
-// GET /urls
 // renders urls_index.ejs - display URL database, link shortURL to its longURL
 app.get('/urls', (req, res) => {
   let user = req.session.user_id;
   let urls = {};
 
   // create user specified url list
-  if (user === undefined){
+  if (user === undefined) {
     res.redirect("/login");
     return;
   } else {
@@ -154,22 +139,17 @@ app.get('/urls', (req, res) => {
   res.render("urls_index", templateVars);
 })
 
-// GET /urls/new
 // renders urls_new - only registered users can add new url
-// 
 app.get('/urls/new', (req, res) => {
   let user = req.session.user_id;
   let templateVars = {user: user};
-  if (user === undefined){
+  if (user === undefined) {
     res.redirect("/login");
     return;
   }
   res.render("urls_new", templateVars);
 });
 
-
-
-// GET /urls/:id 
 // renders urls_show - display requested shortURL and its longURL, link shortURL to longURL
 // prevent unauthorized users to view sortened URL
 app.get('/urls/:id', (req, res) => {
@@ -186,16 +166,16 @@ app.get('/urls/:id', (req, res) => {
   res.render("urls_show", templateVars);
 })
 
-// GET /u/:id
-// redirect to longURL - handle shortURL request
-// render HTML
+// redirect to longURL - handle shortURL request, stretch
 app.get('/u/:id', (req, res) => {
-  let longURL = urlDatabase[req.params.id].url;
+  let shortURL = req.params.id;
+  // stretch - increase visit counter
+  urlDatabase[shortURL].count += 1
+  let longURL = urlDatabase[shortURL].url;
   res.redirect(longURL);
 
 })
 
-// POST /urls
 // Add new URL key-value pair to the urlDatabse
 // redirect to newly added url page - /urls/:id
 app.post('/urls', (req, res) => {
@@ -210,19 +190,19 @@ app.post('/urls', (req, res) => {
   let ShortURL = generateRandomString(6);
   urlDatabase[ShortURL] = {
     url: req.body['longURL'],
-    userID: user.id
+    userID: user.id,
+    count: 0
   }
   res.redirect("/urls");
 })
 
-// POST /urls/:id
 // update a URL to the urlDatabase, only authorized user can see thier own list
 // redirect to /urls
 app.post('/urls/:id', (req, res) => {
   let shortURL = req.params.id;
   let user = req.session.user_id;
 
-  if (urlDatabase[shortURL].userID !== user.id){
+  if (urlDatabase[shortURL].userID !== user.id) {
     res.status(403).send("unauthorized");
     return;
   }
@@ -230,14 +210,12 @@ app.post('/urls/:id', (req, res) => {
   res.redirect("/urls");
 })
 
-// POST /urls/:id/delete
 // delete specifi url from urlDatabase
-// redirect to /urls
 app.post('/urls/:id/delete', (req, res) => {
   let user = req.session.user_id;
   let shortURL = req.params.id;
 
-  if (urlDatabase[shortURL].userID !== user.id){
+  if (urlDatabase[shortURL].userID !== user.id) {
     res.status(403).send("unauthorized");
     return;
   }
@@ -246,7 +224,6 @@ app.post('/urls/:id/delete', (req, res) => {
   // redirect to index with updated database
   res.redirect('/urls');
 })
-
 
 // PORT
 app.listen(PORT, () => {console.log('TinyApp Listening on PORT 8080!')});
